@@ -3,6 +3,7 @@ let cols, rows;
 let grid = [];
 let mazePath = [];
 let headCell;
+let createMaze = false;
 
 function setup() {
     createCanvas(800, 800);
@@ -30,59 +31,107 @@ function setup() {
       }
     }
 
-    // we start at (0,0) and mark that cell visited
-    headCell = grid[0];
-    headCell.visited = true;
-    headCell.head = true;
+    // // we start at (0,0) and mark that cell visited
+    // headCell = grid[0];
+    // headCell.visited = true;
+    // headCell.head = true;
 }
 
 function draw() {
     background('rgb(96,96,96)');
 
-    if (mazePath.length === 0) {
-      headCell.head = false;
-    }
-
     for (let i = 0; i < grid.length; i++) {
       grid[i].show();
     }
 
-    // unvistedCells = mapping of wall to cell
-    unvistedCells = checkUnvisitedNeighbours();
+    document.getElementById("create-maze").onclick = function() {
+      createMaze = true;
 
-    if (unvistedCells.size === 0) {
-      // all neighbouring cells have been visited
-      if (mazePath.length === 0) {
-        // back at the start node
-        console.log(`Maze Created!`);
-        // headCell.head = false;
-        noLoop();
+      // we start at (0,0) and mark that cell visited
+      headCell = grid[0];
+      headCell.visited = true;
+      headCell.head = true;
+    };
+
+    document.getElementById("reset-maze").onclick = function() {
+      createMaze = false;
+      grid = [];
+      for (let j = 0; j < rows; j++) {
+        for (let i = 0; i < cols; i++) {
+          let cell = new Cell(i, j);
+          // cells at the edges of the grid won't have certain walls
+          if (j === 0) {
+            cell.walls[0] = false;
+          }
+          if (j === rows-1) {
+            cell.walls[2] = false;
+          }
+          if (i === 0) {
+            cell.walls[3] = false;
+          }
+          if (i === cols-1) {
+            cell.walls[1] = false;
+          }
+          grid.push(cell);
+        }
+      }
+
+      // we start at (0,0) and mark that cell visited
+      // headCell = grid[0];
+      // headCell.visited = true;
+      // headCell.head = true;
+
+      loop();
+    };
+
+    if (createMaze) {
+      // if (mazePath.length === 0) {
+      //   headCell.head = false;
+      // }
+
+      // for (let i = 0; i < grid.length; i++) {
+      //   grid[i].show();
+      // }
+
+      // unvistedCells = mapping of wall to cell
+      unvistedCells = checkUnvisitedNeighbours();
+
+      if (unvistedCells.size === 0) {
+        // all neighbouring cells have been visited
+        if (mazePath.length === 0) {
+          // back at the start node
+          console.log(`Maze Created!`);
+          // headCell.head = false;
+          noLoop();
+        } else {
+          // go to the previous visited cell in the path
+          headCell.head = false;
+          headCell = mazePath.pop();
+          if (mazePath.length !== 0) {
+            headCell.head = true;
+          }
+        }
       } else {
-        // go to the previous visited cell in the path
+        // there's at least one neighbouring cell that is unvisited
+        mazePath.push(headCell);
+        let itemSet = Array.from(unvistedCells);
+        let randCell = itemSet[floor(random() * itemSet.length)];
+        randCell[1].visited = true;
+        /*
+        the wall to be deleted for the new cell is opposite to the
+        wall deleted for the head cell
+        */
+        if (randCell[0] < 2) {
+          randCell[1].walls[randCell[0] + 2] = false;
+        } else {
+          randCell[1].walls[randCell[0] - 2] = false;
+        }
+        headCell.walls[randCell[0]] = false;
         headCell.head = false;
-        headCell = mazePath.pop();
+        // set the head cell to be the new randomly chosen cell
+        headCell = randCell[1];
         headCell.head = true;
       }
-    } else {
-      // there's at least one neighbouring cell that is unvisited
-      mazePath.push(headCell);
-      let itemSet = Array.from(unvistedCells);
-      let randCell = itemSet[floor(random() * itemSet.length)];
-      randCell[1].visited = true;
-      /*
-      the wall to be deleted for the new cell is opposite to the
-      wall deleted for the head cell
-      */
-      if (randCell[0] < 2) {
-        randCell[1].walls[randCell[0] + 2] = false;
-      } else {
-        randCell[1].walls[randCell[0] - 2] = false;
-      }
-      headCell.walls[randCell[0]] = false;
-      headCell.head = false;
-      // set the head cell to be the new randomly chosen cell
-      headCell = randCell[1];
-      headCell.head = true;
     }
 }
 
